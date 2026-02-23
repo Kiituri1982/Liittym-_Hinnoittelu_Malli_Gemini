@@ -1,431 +1,468 @@
-import React, { useState, useMemo } from 'react';
-import { Calculator, Settings, TableProperties, Zap, MapPin, Euro, Info, Sliders, ChevronDown, ChevronUp } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sähköverkon Liittymishinnoittelu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel standalone for in-browser JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+    <div id="root"></div>
 
-// Energiaviraston yksikköhintoja (2024)
-const evComponents = {
-  cables: [
-    { id: 'amka16', name: '0,4 kV AMKA 16-25 mm²', pricePerKm: 17500 },
-    { id: 'amka35', name: '0,4 kV AMKA 35-50 mm²', pricePerKm: 18000 },
-    { id: 'mk70', name: '0,4 kV Maakaapeli 70 mm²', pricePerKm: 10800 },
-    { id: 'mk95', name: '0,4 kV Maakaapeli 95 mm²', pricePerKm: 11400 },
-  ],
-  transformers: [
-    { id: 'pylvas1', name: '1-pylväsmuuntamo', price: 8330 },
-    { id: 'pylvas2', name: '2-pylväsmuuntamo', price: 11800 },
-    { id: 'puisto0', name: 'Puistomuuntamo (pieni)', price: 15200 },
-    { id: 'puisto1', name: 'Puistomuuntamo (keskikoko)', price: 19100 },
-  ]
-};
+    <script type="text/babel">
+        const { useState, useMemo } = React;
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('customer');
+        // --- Ikonikomponentit (Korvaavat lucide-react -kirjaston) ---
+        const Calculator = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>;
+        const Settings = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
+        const TableProperties = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M15 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M21 9H3"/><path d="M21 15H3"/></svg>;
+        const Zap = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+        const MapPin = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
+        const Info = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
+        const Sliders = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="4" x2="20" y1="21" y2="21"/><line x1="4" x2="20" y1="14" y2="14"/><line x1="4" x2="20" y1="7" y2="7"/><path d="m9 21v-4"/><path d="m15 14v-4"/><path d="m9 7v-4"/></svg>;
+        const ChevronDown = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>;
+        const ChevronUp = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m18 15-6-6-6 6"/></svg>;
 
-  // Ylläpidon (Verkkoyhtiön) parametrit
-  const [params, setParams] = useState({
-    aComponent: 1200, // Laajennuskustannuksen perusosa (€)
-    bComponent: 94.54, // Kapasiteettivarausmaksu (€/kVA)
-    vatRate: 25.5, // ALV %
-    zones: [
-      { id: 1, name: 'Vyöhyke 1 (Kaava-alue / ≤100m)', multiplier: 1.0 },
-      { id: 2, name: 'Vyöhyke 2 (Haja-asutus 100-400m)', multiplier: 1.4 },
-      { id: 3, name: 'Vyöhyke 3 (Haja-asutus 400-600m)', multiplier: 1.85 },
-      { id: 4, name: 'Vyöhyke 4 (Haja-asutus >600m / Tapauskohtainen)', multiplier: 2.5 },
-    ]
-  });
-
-  // Asiakkaan syötteet
-  const [customerInput, setCustomerInput] = useState({
-    fuseSize: 25,
-    zoneId: 1
-  });
-
-  // Määritellyt sulakekoot ja niiden kVA-arvot (S = U * I * sqrt(3), U=0.4kV)
-  const fuseSizes = [
-    { amps: 25, label: '3x25 A', kva: 17.32 },
-    { amps: 35, label: '3x35 A', kva: 24.25 },
-    { amps: 50, label: '3x50 A', kva: 34.64 },
-    { amps: 63, label: '3x63 A', kva: 43.65 },
-    { amps: 80, label: '3x80 A', kva: 55.43 },
-    { amps: 100, label: '3x100 A', kva: 69.28 },
-    { amps: 125, label: '3x125 A', kva: 86.60 },
-    { amps: 160, label: '3x160 A', kva: 110.85 },
-    { amps: 200, label: '3x200 A', kva: 138.56 },
-  ];
-
-  // Laskentalogiikka
-  const calculatePrice = (kva, zoneMultiplier, customA = null, customB = null) => {
-    const a = customA !== null ? customA : params.aComponent;
-    const b = customB !== null ? customB : params.bComponent;
-    const priceVat0 = (a + (b * kva)) * zoneMultiplier;
-    const vatAmount = priceVat0 * (params.vatRate / 100);
-    return {
-      vat0: priceVat0,
-      vatAmount: vatAmount,
-      total: priceVat0 + vatAmount
-    };
-  };
-
-  const handleParamChange = (field, value) => {
-    setParams({ ...params, [field]: parseFloat(value) || 0 });
-  };
-
-  const handleZoneChange = (index, value) => {
-    const newZones = [...params.zones];
-    newZones[index].multiplier = parseFloat(value) || 0;
-    setParams({ ...params, zones: newZones });
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount);
-  };
-
-  // Komponentti: Asiakkaan laskuri
-  const CustomerCalculator = () => {
-    const [advancedMode, setAdvancedMode] = useState(false);
-    const [advParams, setAdvParams] = useState({
-      cableId: 'amka35',
-      cableLength: 50,
-      transformerId: 'pylvas1',
-      transformerShare: 15, // Asiakkaan kustannusosuus muuntamosta %
-      bComponent: 94.54
-    });
-
-    const selectedFuse = fuseSizes.find(f => f.amps === customerInput.fuseSize);
-    const selectedZone = params.zones.find(z => z.id === customerInput.zoneId);
-
-    // Lasketaan dynaaminen a-komponentti, jos edistynyt tila on päällä
-    const activeCable = evComponents.cables.find(c => c.id === advParams.cableId);
-    const activeTransformer = evComponents.transformers.find(t => t.id === advParams.transformerId);
-    
-    const dynamicAComponent = advancedMode 
-      ? ((advParams.cableLength / 1000) * activeCable.pricePerKm) + (activeTransformer.price * (advParams.transformerShare / 100))
-      : null;
-    
-    const dynamicBComponent = advancedMode ? advParams.bComponent : null;
-
-    const price = calculatePrice(selectedFuse.kva, selectedZone.multiplier, dynamicAComponent, dynamicBComponent);
-
-    return (
-      <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-3xl mx-auto animate-in fade-in zoom-in-95 duration-300">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-          <Calculator className="w-6 h-6 mr-3 text-blue-600" />
-          Arvioi sähköliittymäsi hinta
-        </h2>
+        // --- Sovelluslogiikka ---
         
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Syötteet */}
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                <Zap className="w-4 h-4 mr-2 text-yellow-500" /> Pääsulakkeen koko
-              </label>
-              <select 
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer"
-                value={customerInput.fuseSize}
-                onChange={(e) => setCustomerInput({...customerInput, fuseSize: parseInt(e.target.value)})}
-              >
-                {fuseSizes.map(f => (
-                  <option key={f.amps} value={f.amps}>{f.label} ({f.kva.toFixed(1)} kVA)</option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-2">Valitse kiinteistösi sähkösuunnitelman mukainen sulakekoko. Omakotitaloissa tyypillisin on 3x25 A.</p>
-            </div>
+        // Energiaviraston yksikköhintoja (2024)
+        const evComponents = {
+          cables: [
+            { id: 'amka16', name: '0,4 kV AMKA 16-25 mm²', pricePerKm: 17500 },
+            { id: 'amka35', name: '0,4 kV AMKA 35-50 mm²', pricePerKm: 18000 },
+            { id: 'mk70', name: '0,4 kV Maakaapeli 70 mm²', pricePerKm: 10800 },
+            { id: 'mk95', name: '0,4 kV Maakaapeli 95 mm²', pricePerKm: 11400 },
+          ],
+          transformers: [
+            { id: 'pylvas1', name: '1-pylväsmuuntamo', price: 8330 },
+            { id: 'pylvas2', name: '2-pylväsmuuntamo', price: 11800 },
+            { id: 'puisto0', name: 'Puistomuuntamo (pieni)', price: 15200 },
+            { id: 'puisto1', name: 'Puistomuuntamo (keskikoko)', price: 19100 },
+          ]
+        };
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                <MapPin className="w-4 h-4 mr-2 text-red-500" /> Sijaintivyöhyke
-              </label>
-              <select 
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer"
-                value={customerInput.zoneId}
-                onChange={(e) => setCustomerInput({...customerInput, zoneId: parseInt(e.target.value)})}
-              >
-                {params.zones.map(z => (
-                  <option key={z.id} value={z.id}>{z.name}</option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-2">Hinta vaihtelee etäisyyden ja olemassa olevan sähköverkon mukaan.</p>
-            </div>
+        function App() {
+          const [activeTab, setActiveTab] = useState('customer');
 
-            {/* Edistyneet asetukset */}
-            <div className="pt-4 border-t border-gray-100">
-              <button 
-                onClick={() => setAdvancedMode(!advancedMode)}
-                className="flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors w-full"
-              >
-                <Sliders className="w-4 h-4 mr-2" />
-                Tarkemmat verkkoalueen parametrit
-                {advancedMode ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
-              </button>
-              
-              {advancedMode && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4 animate-in fade-in duration-200">
-                  <p className="text-xs text-gray-600 mb-3">
-                    Määritä oman alueesi verkkokomponentit Energiaviraston yksikköhintojen mukaisesti. Nämä arvot korvaavat yhtiön oletukset laskennassa.
-                  </p>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Kaapelointityyppi</label>
-                    <select 
-                      className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500 cursor-pointer"
-                      value={advParams.cableId}
-                      onChange={(e) => setAdvParams({...advParams, cableId: e.target.value})}
-                    >
-                      {evComponents.cables.map(c => <option key={c.id} value={c.id}>{c.name} ({c.pricePerKm} €/km)</option>)}
-                    </select>
-                  </div>
+          // Ylläpidon (Verkkoyhtiön) parametrit
+          const [params, setParams] = useState({
+            aComponent: 1200, 
+            bComponent: 94.54, 
+            vatRate: 25.5, 
+            zones: [
+              { id: 1, name: 'Vyöhyke 1 (Kaava-alue / ≤100m)', multiplier: 1.0 },
+              { id: 2, name: 'Vyöhyke 2 (Haja-asutus 100-400m)', multiplier: 1.4 },
+              { id: 3, name: 'Vyöhyke 3 (Haja-asutus 400-600m)', multiplier: 1.85 },
+              { id: 4, name: 'Vyöhyke 4 (Haja-asutus >600m / Tapauskohtainen)', multiplier: 2.5 },
+            ]
+          });
 
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Kaapelin pituus (m)</label>
-                    <input 
-                      type="number"
-                      className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500"
-                      value={advParams.cableLength}
-                      onChange={(e) => setAdvParams({...advParams, cableLength: parseFloat(e.target.value) || 0})}
-                    />
-                  </div>
+          // Asiakkaan syötteet
+          const [customerInput, setCustomerInput] = useState({
+            fuseSize: 25,
+            zoneId: 1
+          });
 
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Muuntamotyyppi</label>
-                    <select 
-                      className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500 cursor-pointer"
-                      value={advParams.transformerId}
-                      onChange={(e) => setAdvParams({...advParams, transformerId: e.target.value})}
-                    >
-                      {evComponents.transformers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.price} €)</option>)}
-                    </select>
-                  </div>
+          // Määritellyt sulakekoot ja niiden kVA-arvot (S = U * I * sqrt(3), U=0.4kV)
+          const fuseSizes = [
+            { amps: 25, label: '3x25 A', kva: 17.32 },
+            { amps: 35, label: '3x35 A', kva: 24.25 },
+            { amps: 50, label: '3x50 A', kva: 34.64 },
+            { amps: 63, label: '3x63 A', kva: 43.65 },
+            { amps: 80, label: '3x80 A', kva: 55.43 },
+            { amps: 100, label: '3x100 A', kva: 69.28 },
+            { amps: 125, label: '3x125 A', kva: 86.60 },
+            { amps: 160, label: '3x160 A', kva: 110.85 },
+            { amps: 200, label: '3x200 A', kva: 138.56 },
+          ];
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Asiakkaan osuus muuntamosta (%)</label>
-                      <input 
-                        type="number"
-                        className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500"
-                        value={advParams.transformerShare}
-                        onChange={(e) => setAdvParams({...advParams, transformerShare: parseFloat(e.target.value) || 0})}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Kapasiteettivaraus €/kVA</label>
-                      <input 
-                        type="number" step="0.01"
-                        className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500"
-                        value={advParams.bComponent}
-                        onChange={(e) => setAdvParams({...advParams, bComponent: parseFloat(e.target.value) || 0})}
-                      />
-                    </div>
-                  </div>
+          // Laskentalogiikka
+          const calculatePrice = (kva, zoneMultiplier, customA = null, customB = null) => {
+            const a = customA !== null ? customA : params.aComponent;
+            const b = customB !== null ? customB : params.bComponent;
+            const priceVat0 = (a + (b * kva)) * zoneMultiplier;
+            const vatAmount = priceVat0 * (params.vatRate / 100);
+            return {
+              vat0: priceVat0,
+              vatAmount: vatAmount,
+              total: priceVat0 + vatAmount
+            };
+          };
 
-                  <div className="bg-blue-100 p-3 rounded-lg text-sm text-blue-900 font-mono mt-2">
-                    Laskettu a-komponentti: <strong>{dynamicAComponent.toFixed(2)} €</strong>
-                  </div>
-                </div>
-              )}
-            </div>
+          const handleParamChange = (field, value) => {
+            setParams({ ...params, [field]: parseFloat(value) || 0 });
+          };
 
-          </div>
+          const handleZoneChange = (index, value) => {
+            const newZones = [...params.zones];
+            newZones[index].multiplier = parseFloat(value) || 0;
+            setParams({ ...params, zones: newZones });
+          };
 
-          {/* Tulokset */}
-          <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100 flex flex-col justify-center">
-            <div className="text-center">
-              <p className="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-2">Arvioitu liittymismaksu</p>
-              <h3 className="text-4xl font-extrabold text-blue-900 mb-2">
-                {formatCurrency(price.total)}
-              </h3>
-              <p className="text-sm text-blue-700 mb-6">Sisältää ALV {params.vatRate}%</p>
-            </div>
+          const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount);
+          };
 
-            <div className="space-y-3 pt-4 border-t border-blue-200">
-              <div className="flex justify-between text-sm text-blue-800">
-                <span>Veroton hinta (ALV 0%):</span>
-                <span className="font-semibold">{formatCurrency(price.vat0)}</span>
-              </div>
-              <div className="flex justify-between text-sm text-blue-800">
-                <span>Arvonlisävero ({params.vatRate}%):</span>
-                <span className="font-semibold">{formatCurrency(price.vatAmount)}</span>
-              </div>
-              <div className="mt-4 bg-white/60 p-3 rounded-lg flex items-start text-xs text-blue-800">
-                <Info className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
-                <p>Hinta on arvio, joka perustuu Energiaviraston laskentamenetelmiin. Lopullinen hinta vahvistetaan liittymäsopimuksessa.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+          // Komponentti: Asiakkaan laskuri
+          const CustomerCalculator = () => {
+            const [advancedMode, setAdvancedMode] = useState(false);
+            const [advParams, setAdvParams] = useState({
+              cableId: 'amka35',
+              cableLength: 50,
+              transformerId: 'pylvas1',
+              transformerShare: 15,
+              bComponent: 94.54
+            });
 
-  // Komponentti: Verkkoyhtiön asetukset
-  const AdminSettings = () => {
-    return (
-      <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-4xl mx-auto animate-in fade-in duration-300">
-         <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-          <Settings className="w-6 h-6 mr-3 text-gray-600" />
-          Verkkoyhtiön parametrit (Energiavirasto-malli)
-        </h2>
-        
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-5">
-            <h3 className="text-lg font-semibold border-b pb-2">Peruskomponentit</h3>
+            const selectedFuse = fuseSizes.find(f => f.amps === customerInput.fuseSize);
+            const selectedZone = params.zones.find(z => z.id === customerInput.zoneId);
+
+            // Lasketaan dynaaminen a-komponentti, jos edistynyt tila on päällä
+            const activeCable = evComponents.cables.find(c => c.id === advParams.cableId);
+            const activeTransformer = evComponents.transformers.find(t => t.id === advParams.transformerId);
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Laajennuskustannus (a-komponentti) / €
-              </label>
-              <input 
-                type="number" 
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                value={params.aComponent}
-                onChange={(e) => handleParamChange('aComponent', e.target.value)}
-              />
-              <p className="text-xs text-gray-500 mt-1">Verkon fyysisen laajentamisen kiinteä peruskustannus.</p>
-            </div>
+            const dynamicAComponent = advancedMode 
+              ? ((advParams.cableLength / 1000) * activeCable.pricePerKm) + (activeTransformer.price * (advParams.transformerShare / 100))
+              : null;
+            
+            const dynamicBComponent = advancedMode ? advParams.bComponent : null;
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Kapasiteettivarausmaksu (b-komponentti) / €/kVA
-              </label>
-              <input 
-                type="number" 
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                value={params.bComponent}
-                onChange={(e) => handleParamChange('bComponent', e.target.value)}
-              />
-              <p className="text-xs text-gray-500 mt-1">Kapasiteetin hinta per kVA (esim. ~94,54 €/kVA).</p>
-            </div>
+            const price = calculatePrice(selectedFuse.kva, selectedZone.multiplier, dynamicAComponent, dynamicBComponent);
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Arvonlisävero (ALV %)
-              </label>
-              <input 
-                type="number" step="0.5"
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                value={params.vatRate}
-                onChange={(e) => handleParamChange('vatRate', e.target.value)}
-              />
-            </div>
-          </div>
+            return (
+              <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-3xl mx-auto transition-all duration-300">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <Calculator className="w-6 h-6 mr-3 text-blue-600" />
+                  Arvioi sähköliittymäsi hinta
+                </h2>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  {/* Syötteet */}
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <Zap className="w-4 h-4 mr-2 text-yellow-500" /> Pääsulakkeen koko
+                      </label>
+                      <select 
+                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer"
+                        value={customerInput.fuseSize}
+                        onChange={(e) => setCustomerInput({...customerInput, fuseSize: parseInt(e.target.value)})}
+                      >
+                        {fuseSizes.map(f => (
+                          <option key={f.amps} value={f.amps}>{f.label} ({f.kva.toFixed(1)} kVA)</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-2">Valitse kiinteistösi sähkösuunnitelman mukainen sulakekoko. Omakotitaloissa tyypillisin on 3x25 A.</p>
+                    </div>
 
-          <div className="space-y-5">
-            <h3 className="text-lg font-semibold border-b pb-2">Vyöhykekertoimet</h3>
-            {params.zones.map((zone, index) => (
-              <div key={zone.id} className="flex flex-col">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {zone.name}
-                </label>
-                <div className="flex items-center">
-                  <input 
-                    type="number" step="0.05"
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    value={zone.multiplier}
-                    onChange={(e) => handleZoneChange(index, e.target.value)}
-                  />
-                  <span className="ml-3 text-sm text-gray-500 font-mono w-12">x {zone.multiplier.toFixed(2)}</span>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                        <MapPin className="w-4 h-4 mr-2 text-red-500" /> Sijaintivyöhyke
+                      </label>
+                      <select 
+                        className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer"
+                        value={customerInput.zoneId}
+                        onChange={(e) => setCustomerInput({...customerInput, zoneId: parseInt(e.target.value)})}
+                      >
+                        {params.zones.map(z => (
+                          <option key={z.id} value={z.id}>{z.name}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-2">Hinta vaihtelee etäisyyden ja olemassa olevan sähköverkon mukaan.</p>
+                    </div>
+
+                    {/* Edistyneet asetukset */}
+                    <div className="pt-4 border-t border-gray-100">
+                      <button 
+                        onClick={() => setAdvancedMode(!advancedMode)}
+                        className="flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors w-full"
+                      >
+                        <Sliders className="w-4 h-4 mr-2" />
+                        Tarkemmat verkkoalueen parametrit
+                        {advancedMode ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+                      </button>
+                      
+                      {advancedMode && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4 transition-all duration-200">
+                          <p className="text-xs text-gray-600 mb-3">
+                            Määritä oman alueesi verkkokomponentit Energiaviraston yksikköhintojen mukaisesti. Nämä arvot korvaavat yhtiön oletukset laskennassa.
+                          </p>
+                          
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Kaapelointityyppi</label>
+                            <select 
+                              className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500 cursor-pointer"
+                              value={advParams.cableId}
+                              onChange={(e) => setAdvParams({...advParams, cableId: e.target.value})}
+                            >
+                              {evComponents.cables.map(c => <option key={c.id} value={c.id}>{c.name} ({c.pricePerKm} €/km)</option>)}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Kaapelin pituus (m)</label>
+                            <input 
+                              type="number"
+                              className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500"
+                              value={advParams.cableLength}
+                              onChange={(e) => setAdvParams({...advParams, cableLength: parseFloat(e.target.value) || 0})}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Muuntamotyyppi</label>
+                            <select 
+                              className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500 cursor-pointer"
+                              value={advParams.transformerId}
+                              onChange={(e) => setAdvParams({...advParams, transformerId: e.target.value})}
+                            >
+                              {evComponents.transformers.map(t => <option key={t.id} value={t.id}>{t.name} ({t.price} €)</option>)}
+                            </select>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Asiakkaan osuus muuntamosta (%)</label>
+                              <input 
+                                type="number"
+                                className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500"
+                                value={advParams.transformerShare}
+                                onChange={(e) => setAdvParams({...advParams, transformerShare: parseFloat(e.target.value) || 0})}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Kapasiteettivaraus €/kVA</label>
+                              <input 
+                                type="number" step="0.01"
+                                className="w-full p-2 text-sm bg-white border border-gray-300 rounded-lg focus:ring-blue-500"
+                                value={advParams.bComponent}
+                                onChange={(e) => setAdvParams({...advParams, bComponent: parseFloat(e.target.value) || 0})}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="bg-blue-100 p-3 rounded-lg text-sm text-blue-900 font-mono mt-2">
+                            Laskettu a-komponentti: <strong>{dynamicAComponent.toFixed(2)} €</strong>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+
+                  {/* Tulokset */}
+                  <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100 flex flex-col justify-center">
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-2">Arvioitu liittymismaksu</p>
+                      <h3 className="text-4xl font-extrabold text-blue-900 mb-2">
+                        {formatCurrency(price.total)}
+                      </h3>
+                      <p className="text-sm text-blue-700 mb-6">Sisältää ALV {params.vatRate}%</p>
+                    </div>
+
+                    <div className="space-y-3 pt-4 border-t border-blue-200">
+                      <div className="flex justify-between text-sm text-blue-800">
+                        <span>Veroton hinta (ALV 0%):</span>
+                        <span className="font-semibold">{formatCurrency(price.vat0)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-blue-800">
+                        <span>Arvonlisävero ({params.vatRate}%):</span>
+                        <span className="font-semibold">{formatCurrency(price.vatAmount)}</span>
+                      </div>
+                      <div className="mt-4 bg-white/60 p-3 rounded-lg flex items-start text-xs text-blue-800">
+                        <Info className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                        <p>Hinta on arvio, joka perustuu Energiaviraston laskentamenetelmiin. Lopullinen hinta vahvistetaan liittymäsopimuksessa.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ))}
-            <div className="bg-gray-50 p-3 rounded-lg mt-4 border border-gray-200">
-               <p className="text-xs text-gray-600">
-                 Kaava: <code className="bg-gray-200 px-1 rounded">Hinta = (a + b * kVA) * Vyöhykekerroin</code>
-               </p>
+            );
+          };
+
+          // Komponentti: Verkkoyhtiön asetukset
+          const AdminSettings = () => {
+            return (
+              <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-4xl mx-auto transition-all duration-300">
+                 <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <Settings className="w-6 h-6 mr-3 text-gray-600" />
+                  Verkkoyhtiön parametrit (Energiavirasto-malli)
+                </h2>
+                
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div className="space-y-5">
+                    <h3 className="text-lg font-semibold border-b pb-2">Peruskomponentit</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Laajennuskustannus (a-komponentti) / €
+                      </label>
+                      <input 
+                        type="number" 
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        value={params.aComponent}
+                        onChange={(e) => handleParamChange('aComponent', e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Verkon fyysisen laajentamisen kiinteä peruskustannus.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Kapasiteettivarausmaksu (b-komponentti) / €/kVA
+                      </label>
+                      <input 
+                        type="number" 
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        value={params.bComponent}
+                        onChange={(e) => handleParamChange('bComponent', e.target.value)}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Kapasiteetin hinta per kVA (esim. ~94,54 €/kVA).</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Arvonlisävero (ALV %)
+                      </label>
+                      <input 
+                        type="number" step="0.5"
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        value={params.vatRate}
+                        onChange={(e) => handleParamChange('vatRate', e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-5">
+                    <h3 className="text-lg font-semibold border-b pb-2">Vyöhykekertoimet</h3>
+                    {params.zones.map((zone, index) => (
+                      <div key={zone.id} className="flex flex-col">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {zone.name}
+                        </label>
+                        <div className="flex items-center">
+                          <input 
+                            type="number" step="0.05"
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                            value={zone.multiplier}
+                            onChange={(e) => handleZoneChange(index, e.target.value)}
+                          />
+                          <span className="ml-3 text-sm text-gray-500 font-mono w-12">x {zone.multiplier.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="bg-gray-50 p-3 rounded-lg mt-4 border border-gray-200">
+                       <p className="text-xs text-gray-600">
+                         Kaava: <code className="bg-gray-200 px-1 rounded">Hinta = (a + b * kVA) * Vyöhykekerroin</code>
+                       </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          };
+
+          // Komponentti: Hinnastotaulukko
+          const PriceTable = () => {
+            return (
+              <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-5xl mx-auto transition-all duration-300 overflow-x-auto">
+                 <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                  <TableProperties className="w-6 h-6 mr-3 text-emerald-600" />
+                  Kokonaisliittymismaksut (sis. ALV {params.vatRate}%)
+                </h2>
+                
+                <table className="w-full text-left border-collapse min-w-[600px]">
+                  <thead>
+                    <tr className="bg-gray-50 border-b-2 border-gray-200">
+                      <th className="p-3 font-semibold text-gray-700">Sulake (A)</th>
+                      <th className="p-3 font-semibold text-gray-700">Teho (kVA)</th>
+                      {params.zones.map(z => (
+                        <th key={z.id} className="p-3 font-semibold text-gray-700">{z.name.split(' ')[0]} {z.name.split(' ')[1]}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fuseSizes.map((fuse, i) => (
+                      <tr key={fuse.amps} className={`border-b border-gray-100 hover:bg-emerald-50 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                        <td className="p-3 font-medium">{fuse.label}</td>
+                        <td className="p-3 text-gray-500">{fuse.kva.toFixed(1)}</td>
+                        {params.zones.map(z => {
+                          const price = calculatePrice(fuse.kva, z.multiplier);
+                          return (
+                            <td key={z.id} className="p-3">
+                              {formatCurrency(price.total)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="text-xs text-gray-500 mt-4 text-right">
+                  Kaikki summat sisältävät arvonlisäveron. Hinnat on laskettu dynaamisesti valittujen parametrien pohjalta.
+                </p>
+              </div>
+            );
+          };
+
+          return (
+            <div className="min-h-screen p-4 md:p-8">
+              <div className="max-w-6xl mx-auto">
+                
+                {/* Otsikko */}
+                <header className="mb-10 text-center">
+                  <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 mb-3">
+                    Sähköverkon Liittymishinnoittelu
+                  </h1>
+                  <p className="text-gray-500 max-w-2xl mx-auto">
+                    Interaktiivinen laskentatyökalu sähköliittymien hinnoitteluun Energiaviraston vahvistamien periaatteiden mukaisesti.
+                  </p>
+                </header>
+
+                {/* Välilehdet */}
+                <div className="flex justify-center mb-8">
+                  <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-200 inline-flex">
+                    <button 
+                      onClick={() => setActiveTab('customer')}
+                      className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'customer' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <Calculator className="w-4 h-4 mr-2" /> Asiakaslaskuri
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('table')}
+                      className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'table' ? 'bg-emerald-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <TableProperties className="w-4 h-4 mr-2" /> Hinnastotaulukko
+                    </button>
+                    <button 
+                      onClick={() => setActiveTab('admin')}
+                      className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'admin' ? 'bg-gray-800 text-white shadow' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                    >
+                      <Settings className="w-4 h-4 mr-2" /> Parametrit
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sisältöalue */}
+                <main>
+                  {activeTab === 'customer' && <CustomerCalculator />}
+                  {activeTab === 'admin' && <AdminSettings />}
+                  {activeTab === 'table' && <PriceTable />}
+                </main>
+
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+          );
+        }
 
-  // Komponentti: Hinnastotaulukko
-  const PriceTable = () => {
-    return (
-      <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-5xl mx-auto animate-in fade-in duration-300 overflow-x-auto">
-         <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-          <TableProperties className="w-6 h-6 mr-3 text-emerald-600" />
-          Kokonaisliittymismaksut (sis. ALV {params.vatRate}%)
-        </h2>
-        
-        <table className="w-full text-left border-collapse min-w-[600px]">
-          <thead>
-            <tr className="bg-gray-50 border-b-2 border-gray-200">
-              <th className="p-3 font-semibold text-gray-700">Sulake (A)</th>
-              <th className="p-3 font-semibold text-gray-700">Teho (kVA)</th>
-              {params.zones.map(z => (
-                <th key={z.id} className="p-3 font-semibold text-gray-700">{z.name.split(' ')[0]} {z.name.split(' ')[1]}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {fuseSizes.map((fuse, i) => (
-              <tr key={fuse.amps} className={`border-b border-gray-100 hover:bg-emerald-50 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                <td className="p-3 font-medium">{fuse.label}</td>
-                <td className="p-3 text-gray-500">{fuse.kva.toFixed(1)}</td>
-                {params.zones.map(z => {
-                  const price = calculatePrice(fuse.kva, z.multiplier);
-                  return (
-                    <td key={z.id} className="p-3">
-                      {formatCurrency(price.total)}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="text-xs text-gray-500 mt-4 text-right">
-          Kaikki summat sisältävät arvonlisäveron. Hinnat on laskettu dynaamisesti valittujen parametrien pohjalta.
-        </p>
-      </div>
-    );
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Otsikko */}
-        <header className="mb-10 text-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 mb-3">
-            Sähköverkon Liittymishinnoittelu
-          </h1>
-          <p className="text-gray-500 max-w-2xl mx-auto">
-            Interaktiivinen laskentatyökalu sähköliittymien hinnoitteluun Energiaviraston vahvistamien periaatteiden mukaisesti.
-          </p>
-        </header>
-
-        {/* Välilehdet */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-200 inline-flex">
-            <button 
-              onClick={() => setActiveTab('customer')}
-              className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'customer' ? 'bg-blue-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
-            >
-              <Calculator className="w-4 h-4 mr-2" /> Asiakaslaskuri
-            </button>
-            <button 
-              onClick={() => setActiveTab('table')}
-              className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'table' ? 'bg-emerald-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
-            >
-              <TableProperties className="w-4 h-4 mr-2" /> Hinnastotaulukko
-            </button>
-            <button 
-              onClick={() => setActiveTab('admin')}
-              className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === 'admin' ? 'bg-gray-800 text-white shadow' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
-            >
-              <Settings className="w-4 h-4 mr-2" /> Parametrit
-            </button>
-          </div>
-        </div>
-
-        {/* Sisältöalue */}
-        <main>
-          {activeTab === 'customer' && <CustomerCalculator />}
-          {activeTab === 'admin' && <AdminSettings />}
-          {activeTab === 'table' && <PriceTable />}
-        </main>
-
-      </div>
-    </div>
-  );
-}
+        // Renderöidään sovellus root-diviin
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
